@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plinko</title>
+
+    <script src="//cdn.tailwindcss.com"></script>
+    <script src="tmi.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+        }
+    </style>
+
+    <script>
+        var objs = []
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+    </script>
+</head>
+<body>
+
+    <div id="result-container" class="hidden flex fixed w-full h-screen items-center justify-center bg-zinc-300 z-40 bg-opacity-90">
+        <div class="text-9xl font-bold text-center">
+            <p class="text-4xl">RESULT</p>
+            <span id="result"></span>
+        </div>
+    </div>
+
+    <div id="matter-container" class="w-full h-screen bg-[#ffebcd] overflow-hidden rounded-lg z-0">
+        
+    </div>
+
+    <div class="flex w-full m-auto fixed bottom-10 justify-between px-4 z-0">
+        <div class="text-4xl font-bold">1</div>
+        <div class="text-4xl font-bold">2</div>
+        <div class="text-4xl font-bold">3</div>
+        <div class="text-4xl font-bold">4</div>
+        <div class="text-4xl font-bold">5</div>
+    </div>
+
+    <script src="funcs.js"></script>
+    <script src="matter.min.js"></script>
+    <script src="staticObjs.js"></script>
+
+    <script>
+
+        let playerBall;
+
+        max_x = matterContainer.clientWidth - 30
+
+        var rowSpacing = 100
+
+        for (var i = 0; i < 13; i++) {
+            var spacing = (i % 2 === 0) ? 35 : 7;
+            var numCircles = (i % 2 === 0) ? 7 : 9;
+
+            for (var j = 0; j < numCircles; j++) {
+                objs.push(Bodies.circle(spacing, rowSpacing, 8, {isStatic: true}));
+                spacing += 55;
+            }
+
+            rowSpacing += 45;
+        }
+
+        const numbers = [number1, number2, number3, number4, number5];
+
+        Composite.add(engine.world, objs.concat(numbers));
+
+        Render.run(render);
+
+        var runner = Runner.create();
+
+        Runner.run(runner, engine);
+
+        const collisionInterval = setInterval(() => {
+            if(playerBall != null){
+                for (let i = 0; i < numbers.length; i++) {
+                    if (Matter.Collision.collides(playerBall, numbers[i])) {
+                        Composite.remove(engine.world, playerBall)
+                        playerBall = null
+
+                        document.querySelector('#result-container').classList.remove("hidden")
+                        document.querySelector('#result').innerText = i + 1
+
+                        setTimeout(() => {
+                            document.querySelector('body').classList.add("hidden")
+                            document.querySelector('#result-container').classList.add("hidden")
+                            
+                        }, 3800);
+                        break;
+                    }
+                }
+            }
+        }, 500);
+
+    </script>
+
+    <script>
+        const client = new tmi.Client({
+            channels: [urlParams.get('streamer')],
+            connection: {
+                secure: true
+            }
+        });
+
+        client.connect();
+
+        client.on('message', (channel, tags, message, self) => {
+            if(message.startsWith("!plinko")){
+                if (tags['mod'] || tags['badges']['broadcaster'] || tags['username'].toLowerCase() == "hypnotck") {
+                    playerBall = createPlayer()
+
+                    document.querySelector('body').classList.remove("hidden")
+
+                    Composite.add(engine.world, playerBall)
+                }
+            }
+        });
+
+        setTimeout(() => {
+            document.querySelector('body').classList.add("hidden")
+        }, 2000);
+    </script>
+</body>
+</html>
